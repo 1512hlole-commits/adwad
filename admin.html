@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>لوحة تحكم | أحمد علي عكا</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* تنسيق اللوجو في الهيدر */
+        .logo-container { cursor: pointer; display: flex; align-items: center; }
+        .main-logo { height: 65px; width: auto; display: block; }
+
+        /* تنسيق اللوجو في الفوتر */
+        .footer-logo { height: 55px; width: auto; margin-bottom: 15px; }
+
+        @media (max-width: 768px) {
+            .main-logo { height: 50px; } /* تصغير الحجم قليلاً للموبايل */
+        }
+        :root { --royal: #1e3a8a; --gold: #b45309; --bg: #f1f5f9; }
+        body { font-family: 'Tajawal', sans-serif; background: var(--bg); margin: 0; display: flex; }
+        .sidebar { width: 260px; background: var(--royal); color: white; min-height: 100vh; padding: 25px; position: fixed; }
+        .main { margin-right: 280px; padding: 40px; width: 100%; }
+        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        input, textarea, select { width: 100%; padding: 12px; margin: 10px 0; border: 1.5px solid #ddd; border-radius: 12px; }
+        .btn-add { background: var(--royal); color: white; border: none; padding: 15px; border-radius: 12px; cursor: pointer; width: 100%; font-weight: bold; }
+        .news-list { margin-top: 30px; background: white; border-radius: 20px; padding: 20px; }
+        .list-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
+        .urgent-badge { background: red; color: white; padding: 2px 8px; border-radius: 5px; font-size: 0.8rem; }
+    </style>
+    <div class="logo-container" onclick="showPage('home')">
+     <img src="Sleek logo with digital head silhouette.png" alt="لوجو عالم AI" class="main-logo">
+
+    </div>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>نظام الإدارة 💎</h2>
+        <p>مرحباً بالناشر</p>
+        <hr style="opacity: 0.2;">
+        <p>➕ إضافة مقال/فيديو</p>
+        <p>📋 الأرشيف</p>
+    </div>
+    <div class="main">
+        <div class="card">
+            <h3 id="form-title">📝 نشر محتوى جديد</h3>
+            <input type="hidden" id="edit-id">
+            <input type="text" id="title" placeholder="عنوان الخبر المودرن...">
+            <textarea id="content" rows="4" placeholder="تفاصيل الخبر بالكامل..."></textarea>
+            <div style="display: flex; gap: 10px;">
+                <select id="cat">
+                    <option value="سياسة">سياسة</option>
+                    <option value="فن">فن</option>
+                    <option value="أناقة">أناقة</option>
+                    <option value="رياضة">رياضة</option>
+                </select>
+                <input type="text" id="img" placeholder="رابط الصورة أو الفيديو">
+            </div>
+            <label style="display: block; margin: 10px 0; color: red; font-weight: bold;">
+                <input type="checkbox" id="isUrgent"> هل هذا الخبر عاجل؟ 🔥
+            </label>
+            <button class="btn-add" id="save-btn" onclick="save()">نشر الخبر الآن 🚀</button>
+        </div>
+
+        <div class="news-list">
+            <h3>📂 التحكم بالأخبار</h3>
+            <div id="admin-list"></div>
+        </div>
+    </div>
+
+    <script>
+        let db = JSON.parse(localStorage.getItem('news_v3')) || [];
+
+        function save() {
+            const id = document.getElementById('edit-id').value;
+            const title = document.getElementById('title').value;
+            const content = document.getElementById('content').value;
+            const cat = document.getElementById('cat').value;
+            const img = document.getElementById('img').value;
+            const isUrgent = document.getElementById('isUrgent').checked;
+
+            if(!title || !content) return alert("اكملي البيانات!");
+
+            const newsData = { id: id || Date.now(), title, content, cat, img, isUrgent, date: new Date().toLocaleString('ar-EG') };
+
+            if(id) {
+                const idx = db.findIndex(n => n.id == id);
+                db[idx] = newsData;
+            } else {
+                db.unshift(newsData);
+            }
+
+            localStorage.setItem('news_v3', JSON.stringify(db));
+            location.reload();
+        }
+
+        function render() {
+            const list = document.getElementById('admin-list');
+            list.innerHTML = db.map(n => `
+                <div class="list-item">
+                    <span>${n.isUrgent ? '<span class="urgent-badge">عاجل</span>' : ''} ${n.title}</span>
+                    <div>
+                        <button onclick="editItem(${n.id})" style="color:green; cursor:pointer; background:none; border:none;">تعديل</button>
+                        <button onclick="deleteItem(${n.id})" style="color:red; cursor:pointer; background:none; border:none;">حذف</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function deleteItem(id) {
+            db = db.filter(n => n.id != id);
+            localStorage.setItem('news_v3', JSON.stringify(db));
+            render();
+        }
+
+        function editItem(id) {
+            const n = db.find(x => x.id == id);
+            document.getElementById('edit-id').value = n.id;
+            document.getElementById('title').value = n.title;
+            document.getElementById('content').value = n.content;
+            document.getElementById('img').value = n.img;
+            document.getElementById('isUrgent').checked = n.isUrgent;
+            document.getElementById('form-title').innerText = "✏️ تعديل الخبر";
+            window.scrollTo(0,0);
+        }
+        render();
+
+    </script>
+</body>
+</html>
